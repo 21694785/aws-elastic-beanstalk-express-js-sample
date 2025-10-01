@@ -10,7 +10,7 @@ pipeline {
     REGISTRY_URL   = credentials('REGISTRY_URL')
     REGISTRY_USER  = credentials('REGISTRY_USER')
     REGISTRY_PASS  = credentials('REGISTRY_PASS')
-    IMAGE_NAME     = "yourname/ebe-node-sample"
+    IMAGE_NAME     = "21694785/jenkins"
     IMAGE_TAG      = "build-${env.BUILD_NUMBER}"
     SNYK_TOKEN     = credentials('SNYK_TOKEN')
   }
