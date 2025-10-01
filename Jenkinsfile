@@ -1,18 +1,14 @@
 pipeline {
-  agent {
-    docker {
-      image 'node:16'
-      args  '-u root:root'
-    }
-  }
+  agent any
 
   environment {
-    REGISTRY_USER  = credentials('REGISTRY_USER')
-    REGISTRY_PASS  = credentials('REGISTRY_PASS')
-    IMAGE_NAME     = "21694785/jenkins"
-    IMAGE_TAG      = "build-${env.BUILD_NUMBER}"
-    SNYK_TOKEN     = credentials('SNYK_TOKEN')
-    SNYK_ORG       = '21694785'
+    REGISTRY_USER = credentials('REGISTRY_USER')   // Docker Hub username
+    REGISTRY_PASS = credentials('REGISTRY_PASS')   // Docker Hub password/token
+    IMAGE_NAME    = "21694785/demoapp"             // <-- change to your Docker Hub repo
+    IMAGE_TAG     = "build-${env.BUILD_NUMBER}"
+    SNYK_TOKEN    = credentials('SNYK_TOKEN')      // personal token or service-account token
+    // If you use a service-account token, also set your org slug here and keep the --org flag below.
+    // SNYK_ORG   = "21694785"
   }
 
   stages {
@@ -20,41 +16,39 @@ pipeline {
       steps { checkout scm }
     }
 
-    stage('Install deps') {
+    stage('Node 16 env (deps + tests + Snyk)') {
       steps {
-        sh 'npm install --save'
-      }
-    }
+        script {
+          def n = docker.image('node:16'); n.pull()
+          n.inside('-u root:root') {
+            sh 'node -v'
+            sh 'npm ci || npm install'
+            sh 'npm test || echo "No tests defined"'
 
-    stage('Unit tests') {
-      steps {
-        sh 'npm test || echo "No tests defined"'
-      }
-    }
-
-    stage('Snyk scan (fail on High/Critical)') {
-      steps {
-        sh '''
-          npm install -g snyk
-          snyk auth ${SNYK_TOKEN}
-          snyk test --org=$SNYK_ORG --severity-threshold=high ||  exit 1)
-        '''
+            // --- Snyk: one-line sh steps to avoid multiline quoting issues ---
+            sh 'npm install -g snyk'
+            sh 'snyk auth $SNYK_TOKEN'
+            // If using service account, add:  --org=$SNYK_ORG
+            sh 'snyk test --severity-threshold=high'
+          }
+        }
       }
     }
 
     stage('Build Docker image') {
-      steps {
-        sh '''
-          echo "$REGISTRY_PASS" | docker login "$REGISTRY_URL" -u "$REGISTRY_USER" --password-stdin
-          docker build -t "$REGISTRY_URL/$IMAGE_NAME:$IMAGE_TAG" .
-        '''
-      }
+      steps { sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .' }
     }
 
     stage('Push image') {
       steps {
-        sh 'docker push "$REGISTRY_URL/$IMAGE_NAME:$IMAGE_TAG"'
+        sh 'echo $REGISTRY_PASS | docker login -u $REGISTRY_USER --password-stdin'
+        sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
       }
     }
+  }
+
+  post {
+    success { echo '✅ Pipeline finished successfully.' }
+    failure { echo '❌ Pipeline failed — check the stage above.' }
   }
 }
