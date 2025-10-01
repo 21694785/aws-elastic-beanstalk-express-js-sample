@@ -4,7 +4,7 @@ pipeline {
   environment {
     REGISTRY_USER = credentials('REGISTRY_USER')   // Docker Hub username
     REGISTRY_PASS = credentials('REGISTRY_PASS')   // Docker Hub password/token
-    IMAGE_NAME    = "21694785/demoapp"             // <-- change to your Docker Hub repo
+    IMAGE_NAME    = "21694785/jenkins"             // <-- change to your Docker Hub repo
     IMAGE_TAG     = "build-${env.BUILD_NUMBER}"
     SNYK_TOKEN    = credentials('SNYK_TOKEN')      // personal token or service-account token
     // If you use a service-account token, also set your org slug here and keep the --org flag below.
