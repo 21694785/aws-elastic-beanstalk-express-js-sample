@@ -12,6 +12,7 @@ pipeline {
     IMAGE_NAME     = "21694785/jenkins"
     IMAGE_TAG      = "build-${env.BUILD_NUMBER}"
     SNYK_TOKEN     = credentials('SNYK_TOKEN')
+    SNYK_ORG       = '21694785'
   }
 
   stages {
@@ -36,7 +37,7 @@ pipeline {
         sh '''
           npm install -g snyk
           snyk auth ${SNYK_TOKEN}
-          snyk test --severity-threshold=high || (echo "High/Critical vulns found"; exit 1)
+          snyk test --org=$SNYK_ORG --severity-threshold=high ||  exit 1)
         '''
       }
     }
