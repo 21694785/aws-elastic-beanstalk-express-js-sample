@@ -2,8 +2,8 @@ pipeline {
   agent any
 
   environment {
-    REGISTRY_USER = credentials('REGISTRY_USER')   // Docker Hub username
-    REGISTRY_PASS = credentials('REGISTRY_PASS')   // Docker Hub password/token
+      // Docker Hub username
+      // Docker Hub password/token
     IMAGE_NAME    = "21694785/jenkins"             // <-- change to your Docker Hub repo
     IMAGE_TAG     = "build-${env.BUILD_NUMBER}"
     SNYK_TOKEN    = credentials('SNYK_TOKEN')      // personal token or service-account token
@@ -41,7 +41,8 @@ pipeline {
 
     stage('Push image') {
       steps {
-        sh 'echo $REGISTRY_PASS | docker login -u $REGISTRY_USER --password-stdin'
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
         sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
       }
     }
